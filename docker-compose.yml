@@ -1,0 +1,68 @@
+
+services:
+  product-service:
+    image: shopsphere-product-service:1.0
+    build:
+      context: ./product-service
+    container_name: shopsphere-product-service
+    ports:
+      - "8081:8081"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m"
+    mem_limit: 512m
+    restart: unless-stopped
+
+  inventory-service:
+    image: shopsphere-inventory-service:1.0
+    build:
+      context: ./inventory-service
+    container_name: shopsphere-inventory-service
+    ports:
+      - "8082:8082"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m"
+    mem_limit: 512m
+    restart: unless-stopped
+
+  payment-service:
+    image: shopsphere-payment-service:1.0
+    build:
+      context: ./payment-service
+    container_name: shopsphere-payment-service
+    ports:
+      - "8083:8083"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m"
+    mem_limit: 512m
+    restart: unless-stopped
+
+  order-service:
+    image: shopsphere-order-service:1.0
+    build:
+      context: ./order-service
+    container_name: shopsphere-order-service
+    ports:
+      - "8084:8084"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m"
+    mem_limit: 512m
+    restart: unless-stopped
+
+  api-gateway:
+    image: shopsphere-api-gateway:1.0
+    build:
+      context: ./api-gateway
+    container_name: shopsphere-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m"
+      PRODUCT_SERVICE_URL: http://product-service:8081
+      INVENTORY_SERVICE_URL: http://inventory-service:8082
+      ORDER_SERVICE_URL: http://order-service:8084
+    mem_limit: 512m
+    restart: unless-stopped
+    depends_on:
+      - product-service
+      - inventory-service
+      - order-service
