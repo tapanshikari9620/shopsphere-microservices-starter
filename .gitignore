@@ -4,3 +4,14 @@ target/
 *.iml
 .env
 .DS_Store
+
+# Terraform local files
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfplan.*
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
