@@ -1,5 +1,5 @@
 
-name: ShopSphere CI Pipeline
+name: ShopSphere CI-CD Pipeline
 
 on:
   push:
@@ -12,10 +12,17 @@ on:
 
 permissions:
   contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ACCOUNT_ID: "307657261037"
+  ECR_REGISTRY: "307657261037.dkr.ecr.us-east-1.amazonaws.com"
+  AWS_ROLE_ARN: "arn:aws:iam::307657261037:role/ShopSphereGitHubActionsRole"
 
 jobs:
-  build-and-test:
-    name: Build, Test and Docker Image Creation
+  build-and-push:
+    name: Build, Test and Push Docker Images
     runs-on: ubuntu-latest
 
     steps:
@@ -28,11 +35,6 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
-
-      - name: Verify Java and Maven
-        run: |
-          java -version
-          mvn -version
 
       - name: Build and test all microservices
         run: mvn -B clean verify
@@ -52,5 +54,43 @@ jobs:
       - name: Build API Gateway Docker image
         run: docker build -t shopsphere-api-gateway:1.0 ./api-gateway
 
-      - name: List generated Docker images
-        run: docker images
+      - name: Configure AWS credentials using OIDC
+        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Tag and push Product Service
+        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+        run: |
+          docker tag shopsphere-product-service:1.0 $ECR_REGISTRY/shopsphere-product-service:1.0
+          docker push $ECR_REGISTRY/shopsphere-product-service:1.0
+
+      - name: Tag and push Inventory Service
+        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+        run: |
+          docker tag shopsphere-inventory-service:1.0 $ECR_REGISTRY/shopsphere-inventory-service:1.0
+          docker push $ECR_REGISTRY/shopsphere-inventory-service:1.0
+
+      - name: Tag and push Payment Service
+        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+        run: |
+          docker tag shopsphere-payment-service:1.0 $ECR_REGISTRY/shopsphere-payment-service:1.0
+          docker push $ECR_REGISTRY/shopsphere-payment-service:1.0
+
+      - name: Tag and push Order Service
+        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+        run: |
+          docker tag shopsphere-order-service:1.0 $ECR_REGISTRY/shopsphere-order-service:1.0
+          docker push $ECR_REGISTRY/shopsphere-order-service:1.0
+
+      - name: Tag and push API Gateway
+        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+        run: |
+          docker tag shopsphere-api-gateway:1.0 $ECR_REGISTRY/shopsphere-api-gateway:1.0
+          docker push $ECR_REGISTRY/shopsphere-api-gateway:1.0
